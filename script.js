@@ -10,7 +10,16 @@ window.onload = () => {
     document.getElementById("chatContainer").style.display = "block";
     connectSocket(jwtToken);
     loadHistory(jwtToken);
+    document.getElementById("message").focus();
   }
+
+  // Enter to send message
+  document.getElementById("message").addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      sendMessage();
+    }
+  });
 };
 
 function toggleForm(form) {
@@ -51,6 +60,7 @@ async function login() {
     document.getElementById("chatContainer").style.display = "block";
     connectSocket(jwtToken);
     loadHistory(jwtToken);
+    document.getElementById("message").focus();
   } else {
     alert("Login failed");
   }
@@ -86,15 +96,19 @@ async function loadHistory(token) {
   });
   const data = await res.json();
   data.forEach(msg => {
-    logMessage(`🕓 ${msg.timestamp} — User ${msg.author_id}: ${msg.content}`);
+    const date = new Date(msg.timestamp);
+    const formatted = date.toLocaleString("en-GB").replace(",", "");
+    logMessage(`🕓 ${formatted} — User ${msg.author_id}: ${msg.content}`);
   });
 }
 
 function sendMessage() {
   const input = document.getElementById("message");
   if (socket && socket.readyState === WebSocket.OPEN) {
-    socket.send(input.value);
-    input.value = "";
+    if (input.value.trim()) {
+      socket.send(input.value);
+      input.value = "";
+    }
   } else {
     logMessage("⚠️ WebSocket not connected");
   }

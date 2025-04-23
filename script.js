@@ -20,6 +20,10 @@ window.onload = () => {
       sendMessage();
     }
   });
+
+  document.getElementById("message").addEventListener("focus", () => {
+    document.getElementById("message").scrollIntoView({ block: "nearest" });
+  });  
 };
 
 function toggleForm(form) {
@@ -126,4 +130,36 @@ function updateOnlineList(users) {
   users.forEach(id => {
     list.innerHTML += `👤 User ${id}<br>`;
   });
+}
+
+function connectSocket(token) {
+  socket = new WebSocket(`${WS_API}/ws/chat?token=${token}`);
+
+  socket.onopen = () => {
+    logMessage("✅ Connected to chat");
+    // пинг
+    socket.pingInterval = setInterval(() => {
+      if (socket.readyState === WebSocket.OPEN) {
+        socket.send("ping");
+      }
+    }, 15000);
+  };
+
+  socket.onclose = () => {
+    logMessage("❌ Disconnected");
+    clearInterval(socket.pingInterval);
+    setTimeout(() => {
+      connectSocket(token); // повторное подключение
+    }, 3000);
+  };
+
+  socket.onmessage = (event) => {
+    try {
+      const data = JSON.parse(event.data);
+      if (data.type === "online") updateOnlineList(data.users);
+      else logMessage(data);
+    } catch {
+      logMessage(event.data);
+    }
+  };
 }

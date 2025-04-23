@@ -26,11 +26,7 @@ body {
   
   #input {
     display: flex;
-    gap: 8px;
-  }
-  
-  #message {
-    flex: 1;
+    flex-direction: column;
   }
   
   #online-users {

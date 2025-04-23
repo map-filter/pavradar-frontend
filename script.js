@@ -13,17 +13,19 @@ window.onload = () => {
     document.getElementById("message").focus();
   }
 
-  // Enter to send message
-  document.getElementById("message").addEventListener("keydown", (e) => {
+  const input = document.getElementById("message");
+  input.addEventListener("keydown", (e) => {
     if (e.key === "Enter") {
       e.preventDefault();
       sendMessage();
     }
   });
 
-  document.getElementById("message").addEventListener("focus", () => {
-    document.getElementById("message").scrollIntoView({ block: "nearest" });
-  });  
+  input.addEventListener("focus", () => {
+    setTimeout(() => {
+      input.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    }, 300);
+  });
 };
 
 function toggleForm(form) {
@@ -81,17 +83,32 @@ function logout() {
 function connectSocket(token) {
   socket = new WebSocket(`${WS_API}/ws/chat?token=${token}`);
 
-  socket.onopen = () => logMessage("✅ Connected to chat");
+  socket.onopen = () => {
+    logMessage("✅ Connected to chat");
+    socket.pingInterval = setInterval(() => {
+      if (socket.readyState === WebSocket.OPEN) {
+        socket.send(JSON.stringify({ type: "ping" }));
+      }
+    }, 15000);
+  };
+
+  socket.onclose = () => {
+    logMessage("❌ Disconnected");
+    clearInterval(socket.pingInterval);
+    setTimeout(() => connectSocket(token), 3000);
+  };
+
   socket.onmessage = (event) => {
     try {
       const data = JSON.parse(event.data);
+      if (data.type === "ping") return; // игнорируем служебные ping-и
       if (data.type === "online") updateOnlineList(data.users);
-      else logMessage(data);
+      else if (data.type === "message") logMessage(data.message);
+      else logMessage(event.data);
     } catch {
       logMessage(event.data);
     }
   };
-  socket.onclose = () => logMessage("❌ Disconnected");
 }
 
 async function loadHistory(token) {
@@ -110,7 +127,7 @@ function sendMessage() {
   const input = document.getElementById("message");
   if (socket && socket.readyState === WebSocket.OPEN) {
     if (input.value.trim()) {
-      socket.send(input.value);
+      socket.send(JSON.stringify({ type: "message", message: input.value }));
       input.value = "";
     }
   } else {
@@ -127,39 +144,8 @@ function logMessage(msg) {
 function updateOnlineList(users) {
   const list = document.getElementById("online-users");
   list.innerHTML = `<strong>👥 Online:</strong><br>`;
-  users.forEach(id => {
-    list.innerHTML += `👤 User ${id}<br>`;
+  users.forEach(name => {
+    list.innerHTML += `👤 ${name}<br>`;
   });
 }
 
-function connectSocket(token) {
-  socket = new WebSocket(`${WS_API}/ws/chat?token=${token}`);
-
-  socket.onopen = () => {
-    logMessage("✅ Connected to chat");
-    // пинг
-    socket.pingInterval = setInterval(() => {
-      if (socket.readyState === WebSocket.OPEN) {
-        socket.send("ping");
-      }
-    }, 15000);
-  };
-
-  socket.onclose = () => {
-    logMessage("❌ Disconnected");
-    clearInterval(socket.pingInterval);
-    setTimeout(() => {
-      connectSocket(token); // повторное подключение
-    }, 3000);
-  };
-
-  socket.onmessage = (event) => {
-    try {
-      const data = JSON.parse(event.data);
-      if (data.type === "online") updateOnlineList(data.users);
-      else logMessage(data);
-    } catch {
-      logMessage(event.data);
-    }
-  };
-}

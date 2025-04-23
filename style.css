@@ -1,4 +1,69 @@
-body { font-family: sans-serif; max-width: 600px; margin: 40px auto; }
-#chat { border: 1px solid #ccc; height: 300px; overflow-y: scroll; padding: 10px; margin-bottom: 10px; }
-#input { display: flex; gap: 8px; }
-input, button { padding: 8px; font-size: 1rem; }
+body {
+    font-family: sans-serif;
+    max-width: 600px;
+    margin: 40px auto;
+  }
+  
+  input, button {
+    padding: 8px;
+    font-size: 1rem;
+    margin: 4px 0;
+    width: 100%;
+    box-sizing: border-box;
+  }
+  
+  button {
+    cursor: pointer;
+  }
+  
+  #chat {
+    border: 1px solid #ccc;
+    height: 300px;
+    overflow-y: scroll;
+    padding: 10px;
+    margin-bottom: 10px;
+  }
+  
+  #input {
+    display: flex;
+    gap: 8px;
+  }
+  
+  #message {
+    flex: 1;
+  }
+  
+  #online-users {
+    margin-bottom: 10px;
+    font-weight: bold;
+  }
+  
+  #auth {
+    border: 1px solid #ddd;
+    padding: 16px;
+    border-radius: 8px;
+    background-color: #f9f9f9;
+  }
+  
+  #auth input {
+    margin-bottom: 8px;
+  }
+  
+  #auth p {
+    font-size: 0.9rem;
+    color: #666;
+    text-align: center;
+  }
+  
+  #auth a {
+    color: #007bff;
+    text-decoration: none;
+  }
+  
+  #auth a:hover {
+    text-decoration: underline;
+  }
+  
+  #chatContainer button {
+    margin-top: 8px;
+  }

@@ -1,27 +1,71 @@
 let socket;
-let jwtToken = "";
+let jwtToken = localStorage.getItem("jwtToken") || "";
 
 const HTTP_API = "https://pavradar-backend.fly.dev";
 const WS_API = "wss://pavradar-backend.fly.dev";
 
-async function loadHistory(token) {
-  const res = await fetch(`${HTTP_API}/messages`, {
-    headers: {
-      Authorization: `Bearer ${token}`
-    }
-  });
-  const data = await res.json();
-  data.forEach(msg => {
-    const deleteBtn = `<button onclick="deleteMessage(${msg.id})">🗑</button>`;
-    logMessage(`🕓 ${msg.timestamp} — User ${msg.author_id}: ${msg.content} ${deleteBtn}`);
-  });
+window.onload = () => {
+  if (jwtToken) {
+    document.getElementById("auth").style.display = "none";
+    document.getElementById("chatContainer").style.display = "block";
+    connectSocket(jwtToken);
+    loadHistory(jwtToken);
+  }
+};
+
+function toggleForm(form) {
+  document.getElementById("loginForm").style.display = form === "login" ? "block" : "none";
+  document.getElementById("registerForm").style.display = form === "register" ? "block" : "none";
 }
 
-document.getElementById("token").addEventListener("change", () => {
-  jwtToken = document.getElementById("token").value;
-  socket = new WebSocket(`${WS_API}/ws/chat?token=${jwtToken}`);
+async function register() {
+  const username = document.getElementById("register-username").value;
+  const email = document.getElementById("register-email").value;
+  const password = document.getElementById("register-password").value;
+  const res = await fetch(`${HTTP_API}/register`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ username, email, password })
+  });
+  if (res.ok) {
+    alert("Registered successfully. Now login.");
+    toggleForm("login");
+  } else {
+    alert("Registration failed");
+  }
+}
 
-  loadHistory(jwtToken);
+async function login() {
+  const username = document.getElementById("login-username").value;
+  const password = document.getElementById("login-password").value;
+  const res = await fetch(`${HTTP_API}/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: `username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}`
+  });
+  const data = await res.json();
+  if (data.access_token) {
+    jwtToken = data.access_token;
+    localStorage.setItem("jwtToken", jwtToken);
+    document.getElementById("auth").style.display = "none";
+    document.getElementById("chatContainer").style.display = "block";
+    connectSocket(jwtToken);
+    loadHistory(jwtToken);
+  } else {
+    alert("Login failed");
+  }
+}
+
+function logout() {
+  jwtToken = "";
+  localStorage.removeItem("jwtToken");
+  document.getElementById("auth").style.display = "block";
+  document.getElementById("chatContainer").style.display = "none";
+  if (socket) socket.close();
+}
+
+function connectSocket(token) {
+  socket = new WebSocket(`${WS_API}/ws/chat?token=${token}`);
 
   socket.onopen = () => logMessage("✅ Connected to chat");
   socket.onmessage = (event) => {
@@ -34,7 +78,17 @@ document.getElementById("token").addEventListener("change", () => {
     }
   };
   socket.onclose = () => logMessage("❌ Disconnected");
-});
+}
+
+async function loadHistory(token) {
+  const res = await fetch(`${HTTP_API}/messages`, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  const data = await res.json();
+  data.forEach(msg => {
+    logMessage(`🕓 ${msg.timestamp} — User ${msg.author_id}: ${msg.content}`);
+  });
+}
 
 function sendMessage() {
   const input = document.getElementById("message");
@@ -55,76 +109,7 @@ function logMessage(msg) {
 function updateOnlineList(users) {
   const list = document.getElementById("online-users");
   list.innerHTML = `<strong>👥 Online:</strong><br>`;
-
   users.forEach(id => {
-    list.innerHTML += `
-      👤 User ${id}
-      <button onclick="kickUser(${id})">Kick</button>
-      <button onclick="banUser(${id}, 60)">Ban 1h</button>
-      <button onclick="banUser(${id}, 1440)">Ban 24h</button>
-      <button onclick="banUser(${id}, null)">Ban ∞</button>
-      <button onclick="unbanUser(${id})">Unban</button>
-      <br>`;
+    list.innerHTML += `👤 User ${id}<br>`;
   });
-
-  list.innerHTML += `<br><button onclick="clearChat()">🧹 Clear Chat</button>`;
-}
-
-async function deleteMessage(id) {
-  const confirmed = confirm("Delete this message?");
-  if (!confirmed) return;
-  await fetch(`${HTTP_API}/messages/${id}`, {
-    method: "DELETE",
-    headers: { Authorization: `Bearer ${jwtToken}` }
-  });
-  location.reload();
-}
-
-async function clearChat() {
-  const confirmed = confirm("Clear the entire chat?");
-  if (!confirmed) return;
-  await fetch(`${HTTP_API}/messages`, {
-    method: "DELETE",
-    headers: { Authorization: `Bearer ${jwtToken}` }
-  });
-  location.reload();
-}
-
-async function kickUser(id) {
-  const res = await fetch(`${HTTP_API}/kick`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${jwtToken}`
-    },
-    body: JSON.stringify({ user_id: id })
-  });
-  const result = await res.json();
-  alert(result.detail);
-}
-
-async function banUser(id, duration) {
-  const res = await fetch(`${HTTP_API}/ban`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${jwtToken}`
-    },
-    body: JSON.stringify({ user_id: id, duration: duration })
-  });
-  const result = await res.json();
-  alert(result.detail);
-}
-
-async function unbanUser(id) {
-  const res = await fetch(`${HTTP_API}/unban`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${jwtToken}`
-    },
-    body: JSON.stringify({ user_id: id })
-  });
-  const result = await res.json();
-  alert(result.detail);
 }

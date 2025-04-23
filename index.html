@@ -2,17 +2,37 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <title>Pavradar Chat</title>
   <link rel="stylesheet" href="style.css">
-  <title>Pavradar</title>
 </head>
 <body>
   <h2>Pavradar Chat</h2>
-  <input id="token" type="text" placeholder="Paste JWT token" style="width: 100%"><br><br>
-  <div id="online-users"></div>
-  <div id="chat"></div>
-  <div id="input">
-    <input id="message" type="text" placeholder="Type your message" style="flex: 1">
-    <button onclick="sendMessage()">Send</button>
+
+  <div id="auth">
+    <div id="loginForm">
+      <input id="login-username" placeholder="Username">
+      <input id="login-password" type="password" placeholder="Password">
+      <button onclick="login()">Login</button>
+      <p>No account? <a href="#" onclick="toggleForm('register')">Register</a></p>
+    </div>
+
+    <div id="registerForm" style="display: none">
+      <input id="register-username" placeholder="Username">
+      <input id="register-email" type="email" placeholder="Email">
+      <input id="register-password" type="password" placeholder="Password">
+      <button onclick="register()">Register</button>
+      <p>Already have an account? <a href="#" onclick="toggleForm('login')">Login</a></p>
+    </div>
+  </div>
+
+  <div id="chatContainer" style="display: none">
+    <div id="online-users"></div>
+    <div id="chat"></div>
+    <div id="input">
+      <input id="message" type="text" placeholder="Type your message">
+      <button onclick="sendMessage()">Send</button>
+    </div>
+    <button onclick="logout()">Logout</button>
   </div>
 
   <script src="script.js"></script>

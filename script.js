@@ -101,14 +101,16 @@ function connectSocket(token) {
   socket.onmessage = (event) => {
     try {
       const data = JSON.parse(event.data);
-      if (data.type === "ping") return; // игнорируем служебные ping-и
-      if (data.type === "online") updateOnlineList(data.users);
-      else if (data.type === "message") logMessage(data.message);
-      else logMessage(event.data);
+      if (data.type === "ping") return;
+      if (data.type === "online") {
+        updateOnlineList(data.users);
+      } else if (data.type === "message") {
+        logMessage(data.message);
+      }
     } catch {
-      logMessage(event.data);
+      logMessage(event.data); // fallback
     }
-  };
+  };  
 }
 
 async function loadHistory(token) {
